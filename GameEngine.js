@@ -40,38 +40,38 @@ class GameEngine {
   // ── Title / Selection ────────────────────────────────────
 
   _showTitle() {
-    this.state = 'title';
+    this.state = 'select';
     Utils.showScreen('screen-select');
-    document.getElementById('element-select').classList.add('hidden');
+
+    // Hide the big title card, show selection directly
+    const titleCard = document.querySelector('.title-card');
+    if (titleCard) titleCard.style.display = 'none';
+    document.getElementById('element-select').classList.remove('hidden');
     document.getElementById('player-name').value = 'AVATAR';
 
     // Draw element preview sprites
     ['water','earth','fire','air'].forEach(el => this._drawElementPreview(el));
 
-    // Enter key or click on title → show selection
-    const advance = () => {
-      if (this.state !== 'title') return;
-      this.state = 'select';
-      document.getElementById('element-select').classList.remove('hidden');
-    };
-    document.addEventListener('keydown', function handler(e) {
-      if (e.code === 'Enter' || e.code === 'Space') {
-        advance();
-        document.removeEventListener('keydown', handler);
-      }
+    // Element card selection — use replaceWith trick to clear old listeners
+    document.querySelectorAll('.element-card').forEach(card => {
+      const fresh = card.cloneNode(true);
+      card.parentNode.replaceChild(fresh, card);
     });
-    document.querySelector('.title-prompt').addEventListener('click', advance);
-
-    // Element card selection
     document.querySelectorAll('.element-card').forEach(card => {
       card.addEventListener('click', () => {
         document.querySelectorAll('.element-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
       });
     });
+    // Ensure fire is pre-selected (matches HTML default)
+    const fireCard = document.querySelector('.element-card[data-element="fire"]');
+    if (fireCard) fireCard.classList.add('selected');
 
-    // Start button
-    document.getElementById('btn-start').addEventListener('click', () => this._startGame());
+    // Start button — clone to remove any stacked listeners
+    const oldBtn = document.getElementById('btn-start');
+    const newBtn = oldBtn.cloneNode(true);
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+    newBtn.addEventListener('click', () => this._startGame());
   }
 
   _drawElementPreview(element) {
@@ -139,18 +139,53 @@ class GameEngine {
     const element  = selected?.dataset.element || 'fire';
     const name     = document.getElementById('player-name').value.trim() || 'AVATAR';
 
-    // Check for existing save
+    console.log('[GameEngine] _startGame → element:', element, 'name:', name);
+
+    // Check for existing save — use inline prompt instead of confirm()
     if (this.saveSystem.hasSave()) {
-      const summary = this.saveSystem.getSaveSummary();
-      if (confirm(`Continue saved game?\n${summary}\n\n(Cancel = New Game)`)) {
-        if (this.saveSystem.loadGame()) {
-          this._enterGameWorld();
-          return;
-        }
-      }
+      this._showSavePrompt(element, name);
+      return;
     }
 
-    // New game
+    this._newGame(element, name);
+  }
+
+  _showSavePrompt(element, name) {
+    const summary = this.saveSystem.getSaveSummary();
+    // Build a quick inline overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,0.85);
+      display:flex;align-items:center;justify-content:center;z-index:999;
+    `;
+    overlay.innerHTML = `
+      <div style="background:#16213e;border:3px solid #c8a84b;padding:2rem;max-width:380px;text-align:center;font-family:'Press Start 2P',monospace;color:#e8e8d4;">
+        <p style="font-size:0.55rem;margin-bottom:1rem;color:#ffd700;">SAVE FILE FOUND</p>
+        <p style="font-size:0.4rem;color:#8a8a6a;margin-bottom:1.5rem;line-height:1.8;">${summary}</p>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+          <button id="sp-continue" style="font-family:'Press Start 2P',monospace;font-size:0.45rem;background:#1a2e1a;border:2px solid #ffd700;color:#ffd700;padding:0.6rem;cursor:pointer;">▶ CONTINUE SAVED GAME</button>
+          <button id="sp-new"      style="font-family:'Press Start 2P',monospace;font-size:0.45rem;background:#2e1a1a;border:2px solid #ff7043;color:#ff7043;padding:0.6rem;cursor:pointer;">✕ NEW GAME (overwrites save)</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('sp-continue').addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      if (this.saveSystem.loadGame()) {
+        this._enterGameWorld();
+      } else {
+        this._newGame(element, name);
+      }
+    });
+    document.getElementById('sp-new').addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      this.saveSystem.deleteSave();
+      this._newGame(element, name);
+    });
+  }
+
+  _newGame(element, name) {
     this.entityManager.createPlayer(element, name);
     this.mapManager.loadMap('town', 5, 5);
     this.lastHealerMap = 'healer';
