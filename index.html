@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Avatar: The Last Bender — RPG</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ══════════════ CHARACTER SELECTION SCREEN ══════════════ -->
+  <div id="screen-select" class="screen active">
+    <div class="title-card">
+      <div class="title-flames"></div>
+      <h1 class="game-title">AVATAR</h1>
+      <h2 class="game-subtitle">THE LAST BENDER RPG</h2>
+      <p class="title-prompt blink">PRESS ENTER TO BEGIN</p>
+    </div>
+
+    <div id="element-select" class="hidden">
+      <h3 class="select-heading">CHOOSE YOUR ELEMENT</h3>
+      <div class="element-grid">
+        <div class="element-card" data-element="water">
+          <canvas class="element-preview" id="prev-water" width="80" height="80"></canvas>
+          <div class="element-name">WATER</div>
+          <div class="element-nation">Northern Tribe</div>
+          <div class="element-stats">
+            <span>HP: ●●●●○</span>
+            <span>ATK: ●●●○○</span>
+            <span>SPD: ●●●●○</span>
+          </div>
+        </div>
+        <div class="element-card" data-element="earth">
+          <canvas class="element-preview" id="prev-earth" width="80" height="80"></canvas>
+          <div class="element-name">EARTH</div>
+          <div class="element-nation">Ba Sing Se</div>
+          <div class="element-stats">
+            <span>HP: ●●●●●</span>
+            <span>ATK: ●●●●○</span>
+            <span>SPD: ●●○○○</span>
+          </div>
+        </div>
+        <div class="element-card selected" data-element="fire">
+          <canvas class="element-preview" id="prev-fire" width="80" height="80"></canvas>
+          <div class="element-name">FIRE</div>
+          <div class="element-nation">Fire Nation</div>
+          <div class="element-stats">
+            <span>HP: ●●●○○</span>
+            <span>ATK: ●●●●●</span>
+            <span>SPD: ●●●●○</span>
+          </div>
+        </div>
+        <div class="element-card" data-element="air">
+          <canvas class="element-preview" id="prev-air" width="80" height="80"></canvas>
+          <div class="element-name">AIR</div>
+          <div class="element-nation">Air Nomads</div>
+          <div class="element-stats">
+            <span>HP: ●●○○○</span>
+            <span>ATK: ●●●○○</span>
+            <span>SPD: ●●●●●</span>
+          </div>
+        </div>
+      </div>
+      <div class="name-entry">
+        <label>YOUR NAME: <input type="text" id="player-name" maxlength="8" value="AANG" /></label>
+      </div>
+      <button id="btn-start" class="rpg-btn">BEGIN JOURNEY ▶</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ GAME SCREEN ══════════════ -->
+  <div id="screen-game" class="screen hidden">
+    <div class="game-layout">
+
+      <!-- HUD Bar -->
+      <div id="hud">
+        <div class="hud-left">
+          <span id="hud-name">AANG</span>
+          <span id="hud-element" class="element-badge">FIRE</span>
+        </div>
+        <div class="hud-center">
+          <span id="hud-map">Ember Island Town</span>
+        </div>
+        <div class="hud-right">
+          <span>Lv.<span id="hud-level">1</span></span>
+          <div class="hud-hp-bar"><div id="hud-hp-fill" style="width:100%"></div></div>
+          <span id="hud-hp-text">20/20</span>
+          <button id="btn-menu" class="hud-btn">MENU</button>
+        </div>
+      </div>
+
+      <!-- Canvas + Overlay -->
+      <div class="canvas-wrapper">
+        <canvas id="game-canvas" width="480" height="384"></canvas>
+        <div id="transition-overlay" class="hidden"></div>
+      </div>
+
+      <!-- Dialogue Box -->
+      <div id="dialogue-box" class="hidden">
+        <div id="dialogue-portrait"></div>
+        <div id="dialogue-text"></div>
+        <div id="dialogue-choices" class="hidden"></div>
+        <div id="dialogue-next" class="blink">▼</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════ BATTLE SCREEN ══════════════ -->
+  <div id="screen-battle" class="screen hidden">
+    <div class="battle-layout">
+
+      <!-- Enemy Info -->
+      <div class="battle-info enemy">
+        <div class="battle-name-bar">
+          <span id="enemy-name">WILD FIREBENDER</span>
+          <span id="enemy-level">Lv.3</span>
+        </div>
+        <div class="battle-hp-bar">
+          <div class="hp-label">HP</div>
+          <div class="hp-track"><div id="enemy-hp-fill" style="width:100%"></div></div>
+        </div>
+      </div>
+
+      <!-- Sprites Canvas -->
+      <canvas id="battle-canvas" width="480" height="240"></canvas>
+
+      <!-- Player Info -->
+      <div class="battle-info player">
+        <div class="battle-name-bar">
+          <span id="player-name-battle">AANG</span>
+          <span id="player-level-battle">Lv.1</span>
+        </div>
+        <div class="battle-hp-bar">
+          <div class="hp-label">HP</div>
+          <div class="hp-track"><div id="player-hp-fill" style="width:100%"></div></div>
+        </div>
+        <div class="battle-hp-text"><span id="player-hp-cur">20</span>/<span id="player-hp-max">20</span></div>
+        <div class="xp-track"><div id="player-xp-fill" style="width:0%"></div></div>
+      </div>
+
+      <!-- Battle Menu -->
+      <div id="battle-menu">
+        <div id="battle-log">What will <span id="battle-log-name">AANG</span> do?</div>
+        <div id="battle-actions">
+          <button class="battle-btn" data-action="fight">FIGHT</button>
+          <button class="battle-btn" data-action="skills">SKILLS</button>
+          <button class="battle-btn" data-action="switch">SWITCH</button>
+          <button class="battle-btn" data-action="run">RUN</button>
+        </div>
+        <div id="battle-moves" class="hidden"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════ PAUSE / SAVE MENU ══════════════ -->
+  <div id="screen-menu" class="screen hidden overlay-screen">
+    <div class="menu-panel">
+      <h3 class="menu-title">— MENU —</h3>
+      <div id="menu-stats" class="menu-section">
+        <div>Name: <span id="menu-player-name"></span></div>
+        <div>Element: <span id="menu-element"></span></div>
+        <div>Level: <span id="menu-level"></span></div>
+        <div>HP: <span id="menu-hp"></span></div>
+        <div>XP: <span id="menu-xp"></span></div>
+        <div>Location: <span id="menu-location"></span></div>
+      </div>
+      <div class="menu-section">
+        <h4>MOVES</h4>
+        <ul id="menu-moves"></ul>
+      </div>
+      <div class="menu-buttons">
+        <button class="rpg-btn" id="btn-save">SAVE GAME</button>
+        <button class="rpg-btn" id="btn-load">LOAD GAME</button>
+        <button class="rpg-btn" id="btn-close-menu">RESUME</button>
+      </div>
+      <div id="save-status"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════ MOVE LEARN OVERLAY ══════════════ -->
+  <div id="screen-learn" class="screen hidden overlay-screen">
+    <div class="menu-panel learn-panel">
+      <h3 id="learn-title">NEW MOVE LEARNED!</h3>
+      <div id="learn-info"></div>
+      <div id="learn-replace" class="hidden">
+        <p>Move slots full! Choose a move to FORGET:</p>
+        <ul id="learn-move-list"></ul>
+        <button class="rpg-btn" id="btn-learn-cancel">KEEP OLD MOVES</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ BLACKOUT OVERLAY ══════════════ -->
+  <div id="blackout-overlay" class="hidden"></div>
+
+  <!-- ══════════════ JS MODULES ══════════════ -->
+  <script src="js/data/moves.js"></script>
+  <script src="js/data/maps.js"></script>
+  <script src="js/data/enemies.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/engine/InputHandler.js"></script>
+  <script src="js/managers/EntityManager.js"></script>
+  <script src="js/managers/MapManager.js"></script>
+  <script src="js/systems/BattleSystem.js"></script>
+  <script src="js/systems/DialogueSystem.js"></script>
+  <script src="js/systems/SaveSystem.js"></script>
+  <script src="js/engine/GameEngine.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
